@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PIF News Monitor</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Live news monitor</p>
+          <h1>PIF News Monitor</h1>
+        </div>
+        <div class="status-pill" id="connectionStatus">Starting</div>
+      </header>
+
+      <section class="controls" aria-label="Dashboard controls">
+        <label class="field wide">
+          <span>Search scope</span>
+          <input id="queryInput" type="text" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>Window</span>
+          <select id="timespanSelect">
+            <option value="1d">24 hours</option>
+            <option value="3d">3 days</option>
+            <option value="7d" selected>7 days</option>
+            <option value="14d">14 days</option>
+            <option value="30d">30 days</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Refresh</span>
+          <select id="refreshSelect">
+            <option value="60">1 min</option>
+            <option value="300" selected>5 min</option>
+            <option value="900">15 min</option>
+            <option value="1800">30 min</option>
+          </select>
+        </label>
+        <button class="button primary" id="refreshButton" type="button">Refresh</button>
+      </section>
+
+      <section class="metrics" aria-label="News metrics">
+        <article class="metric">
+          <span class="metric-label">Articles</span>
+          <strong id="articleCount">0</strong>
+          <small id="articleWindow">Last 7 days</small>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Sources</span>
+          <strong id="sourceCount">0</strong>
+          <small>Unique domains</small>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Countries</span>
+          <strong id="countryCount">0</strong>
+          <small>Publisher locations</small>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Latest</span>
+          <strong id="latestAge">--</strong>
+          <small id="lastUpdated">Not updated yet</small>
+        </article>
+      </section>
+
+      <section class="workbench">
+        <section class="panel trend-panel" aria-label="Mention trend">
+          <div class="panel-header">
+            <div>
+              <h2>Mention Trend</h2>
+              <p id="trendSubtitle">Waiting for data</p>
+            </div>
+          </div>
+          <canvas id="trendChart" height="220" aria-label="Articles by day"></canvas>
+        </section>
+
+        <aside class="panel source-panel" aria-label="Top sources">
+          <div class="panel-header compact">
+            <h2>Top Sources</h2>
+          </div>
+          <div id="sourceList" class="source-list"></div>
+        </aside>
+      </section>
+
+      <section class="feed-header">
+        <div>
+          <h2>Recent Mentions</h2>
+          <p id="feedMeta">No articles loaded</p>
+        </div>
+        <label class="field filter">
+          <span>Filter</span>
+          <input id="filterInput" type="search" placeholder="Source, title, country">
+        </label>
+      </section>
+
+      <section id="articleList" class="article-list" aria-live="polite"></section>
+    </main>
+
+    <template id="articleTemplate">
+      <article class="article-card">
+        <div class="article-main">
+          <div class="article-meta"></div>
+          <h3><a target="_blank" rel="noreferrer"></a></h3>
+          <p class="article-snippet"></p>
+        </div>
+        <div class="article-side">
+          <span class="country"></span>
+          <span class="age"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

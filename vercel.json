@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "functions": {
+    "api/news.js": {
+      "runtime": "nodejs22.x"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/news",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}
