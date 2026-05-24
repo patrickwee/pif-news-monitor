@@ -4,8 +4,5 @@
   "private": true,
   "scripts": {
     "start": "node server.mjs"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
