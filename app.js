@@ -1,6 +1,7 @@
 const DEFAULT_QUERY = '("Public Investment Fund" OR "Saudi PIF" OR ("PIF" AND Saudi))';
 const SETTINGS_KEY = "pif-news-monitor-settings";
-const API_ROOT = "/api/news";
+const GOOGLE_NEWS_RSS = "https://news.google.com/rss/search";
+const CORS_PROXY = "https://api.allorigins.win/raw?url=";
 
 const els = {
   queryInput: document.querySelector("#queryInput"),
@@ -74,15 +75,13 @@ function initControls() {
 
 function buildUrl() {
   const params = new URLSearchParams({
-    query: els.queryInput.value.trim() || DEFAULT_QUERY,
-    mode: "artlist",
-    format: "json",
-    sort: "hybridrel",
-    maxrecords: "250",
-    timespan: els.timespanSelect.value
+    q: `${els.queryInput.value.trim() || DEFAULT_QUERY} when:${els.timespanSelect.value}`,
+    hl: "en-US",
+    gl: "US",
+    ceid: "US:en"
   });
 
-  return `${API_ROOT}?${params.toString()}`;
+  return `${CORS_PROXY}${encodeURIComponent(`${GOOGLE_NEWS_RSS}?${params.toString()}`)}`;
 }
 
 async function fetchNews({ manual = false } = {}) {
@@ -105,11 +104,11 @@ async function fetchNews({ manual = false } = {}) {
       throw new Error(`GDELT returned ${response.status}`);
     }
 
-    const data = await response.json();
-    state.articles = normalizeArticles(data.articles || []);
-    state.source = data.source || "GDELT";
+    const xml = await response.text();
+    state.articles = normalizeArticles(parseGoogleNewsItems(xml));
+    state.source = "Google News RSS";
     state.lastFetch = new Date();
-    setStatus(state.source === "Google News RSS" ? "Live RSS" : "Live", "online");
+    setStatus("Live RSS", "online");
     render();
   } catch (error) {
     if (error.name !== "AbortError") {
@@ -146,6 +145,59 @@ function normalizeArticles(articles) {
       return true;
     })
     .sort((a, b) => b.seendate - a.seendate);
+}
+
+function parseGoogleNewsItems(xml) {
+  const matches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+  return matches.map((item) => {
+    const rawTitle = decodeXml(readTag(item, "title"));
+    const source = decodeXml(readTag(item, "source")) || sourceFromGoogleTitle(rawTitle);
+    return {
+      url: decodeXml(readTag(item, "link")),
+      title: stripGoogleSource(rawTitle, source),
+      domain: source || "Google News",
+      sourcecountry: "Unknown",
+      language: "English",
+      seendate: toGdeltDate(new Date(decodeXml(readTag(item, "pubDate")))),
+      snippet: stripTags(decodeXml(readTag(item, "description")))
+    };
+  });
+}
+
+function readTag(xml, tag) {
+  const match = xml.match(new RegExp("<" + tag + "(?: [^>]*)?>([\\s\\S]*?)<\\/" + tag + ">"));
+  return match ? match[1] : "";
+}
+
+function decodeXml(value) {
+  return String(value)
+    .split("<![CDATA[").join("")
+    .split("]]>").join("")
+    .split("&amp;").join("&")
+    .split("&lt;").join("<")
+    .split("&gt;").join(">")
+    .split("&quot;").join('"')
+    .split("&#39;").join("'")
+    .split("&apos;").join("'");
+}
+
+function stripTags(value) {
+  return String(value).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function sourceFromGoogleTitle(title) {
+  const parts = String(title).split(" - ");
+  return parts.length > 1 ? parts[parts.length - 1].trim() : "";
+}
+
+function stripGoogleSource(title, source) {
+  const suffix = " - " + source;
+  return source && title.endsWith(suffix) ? title.slice(0, -suffix.length).trim() : title;
+}
+
+function toGdeltDate(date) {
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return safeDate.toISOString().replace(/\D/g, "").slice(0, 14);
 }
 
 function parseGdeltDate(value) {
